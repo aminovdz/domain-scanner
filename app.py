@@ -223,11 +223,33 @@ if "last_scanned_count" not in st.session_state:
     st.session_state["last_scanned_count"] = 0
 if "bulk_input_text" not in st.session_state:
     st.session_state["bulk_input_text"] = ""
+if "active_nav_tab" not in st.session_state:
+    st.session_state["active_nav_tab"] = "🌐 Bulk Scanner & Multi-TLD"
+
+NAV_OPTIONS = [
+    "🌐 Bulk Scanner & Multi-TLD",
+    "🔎 WHOIS & DNS Records",
+    "🧹 Domain Extractor & Cleaner",
+    "💡 Brandable & Short Names",
+    "📬 Domain Drop Watcher",
+    "💎 Curated Drops (VIP)",
+]
 
 # Sidebar Settings & Monetization
 st.sidebar.title("⚡ DomainSuite")
 st.sidebar.caption("High-Speed Domain Intelligence & Monetization")
 
+# Sidebar Navigation Menu
+st.sidebar.markdown("### 🧭 Menu & Tools")
+selected_nav = st.sidebar.radio(
+    "Go to tool:",
+    NAV_OPTIONS,
+    index=NAV_OPTIONS.index(st.session_state["active_nav_tab"]) if st.session_state["active_nav_tab"] in NAV_OPTIONS else 0,
+    key="nav_selection_radio"
+)
+st.session_state["active_nav_tab"] = selected_nav
+
+st.sidebar.markdown("---")
 st.sidebar.markdown("### ⚙️ Scanner Settings")
 concurrency = st.sidebar.slider("Concurrency", min_value=10, max_value=60, value=30, step=5)
 timeout = st.sidebar.slider("Timeout (seconds)", min_value=1.0, max_value=8.0, value=4.0, step=0.5)
@@ -276,7 +298,7 @@ with tabs[0]:
         if input_choice == "Paste Domain Names or Keywords":
             text_val = st.text_area(
                 "Enter domain names or keyword names (one per line or comma separated):",
-                value=st.session_state["bulk_input_text"],
+                key="bulk_input_text",
                 height=150,
                 placeholder="google.com\nmybrand.gr\nsuperfastai\ncloudsynth",
             )
@@ -450,7 +472,7 @@ with tabs[0]:
                 upsell_html = '<span style="color:#64748b; font-size:12px;">-</span>'
 
             rows.append({
-                "Domain": f"**{safe_dom}**",
+                "Domain": safe_dom,
                 "Status": st_html,
                 "Stage": safe_stage,
                 "Verification Detail": safe_reason,
@@ -551,6 +573,9 @@ with tabs[2]:
 
         extract_btn = st.button("🚀 Extract & Format Domains", type="primary")
 
+    if "extracted_result_data" not in st.session_state:
+        st.session_state["extracted_result_data"] = None
+
     if extract_btn and messy_text.strip():
         apex_only = "Apex" in extract_mode
         extracted = extract_domains_from_text(messy_text, apex_only=apex_only)
@@ -558,20 +583,34 @@ with tabs[2]:
         proto_val = "none" if "none" in protocol_choice else protocol_choice.replace("://", "")
         www_val = "add" if "add" in www_choice else "remove" if "remove" in www_choice else "keep"
         formatted_list = format_domain_urls(extracted, protocol=proto_val, www_mode=www_val)
+        st.session_state["extracted_result_data"] = {
+            "formatted_out": "\n".join(formatted_list),
+            "raw_extracted": extracted,
+            "count": len(formatted_list)
+        }
 
-        st.success(f"Extracted **{len(formatted_list)}** unique domains!")
-        formatted_out = "\n".join(formatted_list)
+    if st.session_state["extracted_result_data"]:
+        ext_data = st.session_state["extracted_result_data"]
+        formatted_out = ext_data["formatted_out"]
+        extracted = ext_data["raw_extracted"]
+
+        st.success(f"Extracted **{ext_data['count']}** unique domains!")
 
         col_res1, col_res2 = st.columns([2, 1])
         with col_res1:
-            st.text_area("Extracted Domains Output:", value=formatted_out, height=180)
+            st.text_area("Extracted Domains Output:", value=formatted_out, height=180, key="extracted_output_box")
+            st.code(formatted_out, language=None)
+            st.caption("💡 Use the copy icon in the top-right corner of the box above to copy all extracted domains to your clipboard in 1 click.")
         with col_res2:
             st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
             st.download_button("📥 Download Extracted (.txt)", formatted_out, "extracted_domains.txt", "text/plain")
 
-            if st.button("➡️ Send to Bulk Scanner"):
+            if st.button("➡️ Send to Bulk Scanner", key="send_extracted_to_bulk"):
                 st.session_state["bulk_input_text"] = "\n".join(extracted)
-                st.success("Loaded into Bulk Scanner! Switch to Tab 1 to scan them.")
+                st.session_state["active_nav_tab"] = "🌐 Bulk Scanner & Multi-TLD"
+                st.session_state["nav_selection_radio"] = "🌐 Bulk Scanner & Multi-TLD"
+                st.success("✅ Loaded into Bulk Scanner! Redirecting...")
+                st.rerun()
 
 # ----------------- TAB 4: BRANDABLE & SHORT NAMES -----------------
 with tabs[3]:
@@ -615,7 +654,10 @@ with tabs[3]:
 
         if st.button("🚀 Bulk Scan These Candidates Now"):
             st.session_state["bulk_input_text"] = "\n".join(cands)
-            st.success("Loaded into Bulk Scanner! Switch to Tab 1 to run the scan.")
+            st.session_state["active_nav_tab"] = "🌐 Bulk Scanner & Multi-TLD"
+            st.session_state["nav_selection_radio"] = "🌐 Bulk Scanner & Multi-TLD"
+            st.success("✅ Loaded into Bulk Scanner! Redirecting...")
+            st.rerun()
 
 # ----------------- TAB 5: DOMAIN DROP WATCHER -----------------
 with tabs[4]:
