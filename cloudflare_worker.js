@@ -7,8 +7,8 @@
  * 3. Transparently proxies regular users to the live Render app with WebSocket/Streamlit support.
  */
 
-const UPSTREAM_HOST = "domainsuite-pro.onrender.com"; // <-- Replace with your Render.com hostname if different
-const CANONICAL_DOMAIN = "https://yourdomain.com"; // <-- Replace with your real domain
+const UPSTREAM_HOST = "domain-scanner-4qqf.onrender.com";
+const CANONICAL_DOMAIN = "https://yourdomain.com"; // <-- Replace with your real domain if you have one
 
 const CRAWLER_USER_AGENTS = [
   "googlebot",
