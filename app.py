@@ -11,21 +11,20 @@ import sys
 import time
 from typing import Dict, List, Set
 
-# Ensure project root is prioritized first in sys.path
-PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+# Fast local domain cleaner (avoids importing heavy checker module on startup)
+def _quick_clean_domain(raw: str) -> str:
+    if not raw or not isinstance(raw, str):
+        return ""
+    d = raw.strip().lower()
+    if "://" in d:
+        d = d.split("://", 1)[1]
+    d = d.split("/")[0].split("?")[0].split("#")[0].strip()
+    return d.split(":")[0].strip(".-")
 
 import pandas as pd
 import streamlit as st
 
 import config
-
-from core.brandable import generate_5letter_brandables, generate_cvcv_domains, generate_prefix_suffix_combos
-from core.checker import CheckResult, DomainChecker, DomainStatus, clean_domain
-from core.extractor import extract_domains_from_text, format_domain_urls
-from core.watch_list import add_domain_watch, add_newsletter_subscriber
-from core.whois_dns import lookup_dns_records, lookup_whois
 
 st.set_page_config(
     page_title=config.META_TITLE,
@@ -355,12 +354,12 @@ with tabs[0]:
             base_name = item.split(".")[0]
             for tld in selected_tlds:
                 d = f"{base_name}.{tld}"
-                cd = clean_domain(d) or d
+                cd = _quick_clean_domain(d) or d
                 if cd and cd not in seen:
                     seen.add(cd)
                     final_domains_to_scan.append(cd)
         else:
-            cd = clean_domain(item) or item
+            cd = _quick_clean_domain(item) or item
             if cd and cd not in seen:
                 seen.add(cd)
                 final_domains_to_scan.append(cd)
@@ -385,6 +384,7 @@ with tabs[0]:
 
     # Run Scan
     if start_bulk and final_domains_to_scan:
+        from core.checker import CheckResult, DomainChecker, DomainStatus
         prog = st.progress(0.0)
         t_start = time.perf_counter()
         checker = DomainChecker(dns_concurrency=concurrency, timeout=timeout)
@@ -398,7 +398,8 @@ with tabs[0]:
 
     # Render Results
     if st.session_state["scan_results"] is not None:
-        res_list: List[CheckResult] = st.session_state["scan_results"]
+        from core.checker import CheckResult, DomainStatus
+        res_list = st.session_state["scan_results"]
         dur = st.session_state["scan_duration"]
         cnt = st.session_state["last_scanned_count"]
 
@@ -515,7 +516,8 @@ with tabs[1]:
     whois_btn = st.button("🔍 Lookup WHOIS & DNS", type="primary")
 
     if whois_btn and whois_input:
-        cd = clean_domain(whois_input) or whois_input.strip().lower()
+        from core.whois_dns import lookup_dns_records, lookup_whois
+        cd = _quick_clean_domain(whois_input) or whois_input.strip().lower()
         with st.spinner(f"Querying WHOIS & DNS records for {cd}..."):
             whois_info = asyncio.run(lookup_whois(cd))
             dns_info = asyncio.run(lookup_dns_records(cd))
@@ -575,6 +577,7 @@ with tabs[2]:
         st.session_state["extracted_result_data"] = None
 
     if extract_btn and messy_text.strip():
+        from core.extractor import extract_domains_from_text, format_domain_urls
         apex_only = "Apex" in extract_mode
         extracted = extract_domains_from_text(messy_text, apex_only=apex_only)
 
@@ -635,6 +638,7 @@ with tabs[3]:
         gen_btn = st.button("✨ Generate Candidate Domains", type="primary")
 
     if gen_btn:
+        from core.brandable import generate_5letter_brandables, generate_cvcv_domains, generate_prefix_suffix_combos
         if "4-Letter" in b_type:
             candidates = generate_cvcv_domains(sel_tlds, count=num_candidates)
         elif "5-Letter" in b_type:
@@ -669,6 +673,7 @@ with tabs[4]:
         watch_btn = st.button("🔔 Watch This Domain Privately", type="primary")
 
         if watch_btn:
+            from core.watch_list import add_domain_watch
             ok, msg = add_domain_watch(target_drop_domain, user_email)
             if ok:
                 st.success(msg)
@@ -698,6 +703,7 @@ with tabs[5]:
     c_sub1, c_sub2 = st.columns([3, 1])
     sub_email = c_sub1.text_input("Enter your email for the Daily VIP Drops:", placeholder="investor@domain.com", key="nl_email")
     if c_sub2.button("Subscribe Free", type="primary"):
+        from core.watch_list import add_newsletter_subscriber
         ok, msg = add_newsletter_subscriber(sub_email)
         if ok:
             st.success(msg)
