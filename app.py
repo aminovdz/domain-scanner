@@ -555,15 +555,23 @@ with tabs[1]:
 # ----------------- TAB 3: DOMAIN EXTRACTOR & CLEANER -----------------
 with tabs[2]:
     st.subheader("🧹 Domain Extractor & URL Protocol Formatter")
-    st.caption("Paste messy text, code, HTML, or URL dumps to extract clean domain names, with options to add/strip http, https, ftp, or www.")
+    st.caption("Paste messy text, code, HTML, or URL dumps to extract clean domain names, with options to filter extensions and add/strip http, https, ftp, or www.")
+
+    if "extractor_input_raw" not in st.session_state:
+        st.session_state["extractor_input_raw"] = ""
+    if "extracted_result_data" not in st.session_state:
+        st.session_state["extracted_result_data"] = None
 
     col_e1, col_e2 = st.columns(2)
     with col_e1:
         messy_text = st.text_area(
             "Paste raw text, HTML, or URLs:",
+            value=st.session_state["extractor_input_raw"],
             height=200,
+            key="extractor_input_text_area",
             placeholder="Check out https://www.example.com/test and ftp://files.mysite.gr or mailto:info@coolbrand.ai",
         )
+        st.session_state["extractor_input_raw"] = messy_text
         extract_mode = st.radio("Extraction Mode", ["Apex / Root Domain only (e.g. example.com)", "Keep Subdomains (e.g. files.mysite.gr)"], horizontal=True)
 
     with col_e2:
@@ -571,43 +579,74 @@ with tabs[2]:
         protocol_choice = st.selectbox("Protocol Prefix", ["none (clean domain)", "https://", "http://", "ftp://", "sftp://"])
         www_choice = st.selectbox("WWW Handling", ["keep as is", "add www.", "remove www."])
 
-        extract_btn = st.button("🚀 Extract & Format Domains", type="primary")
-
-    if "extracted_result_data" not in st.session_state:
-        st.session_state["extracted_result_data"] = None
+        col_act1, col_act2 = st.columns([2, 1])
+        extract_btn = col_act1.button("🚀 Extract & Format Domains", type="primary")
+        if col_act2.button("🗑️ Clear Text"):
+            st.session_state["extractor_input_raw"] = ""
+            st.session_state["extracted_result_data"] = None
+            st.rerun()
 
     if extract_btn and messy_text.strip():
-        from core.extractor import extract_domains_from_text, format_domain_urls
+        from core.extractor import extract_domains_from_text
+        import tldextract
         apex_only = "Apex" in extract_mode
         extracted = extract_domains_from_text(messy_text, apex_only=apex_only)
 
-        proto_val = "none" if "none" in protocol_choice else protocol_choice.replace("://", "")
-        www_val = "add" if "add" in www_choice else "remove" if "remove" in www_choice else "keep"
-        formatted_list = format_domain_urls(extracted, protocol=proto_val, www_mode=www_val)
+        # Detect all found extensions
+        ext_helper = tldextract.TLDExtract(cache_dir="/tmp/.tld_cache")
+        discovered_tlds = sorted(list({ext_helper(d).suffix.lower() for d in extracted if ext_helper(d).suffix}))
+
         st.session_state["extracted_result_data"] = {
-            "formatted_out": "\n".join(formatted_list),
-            "raw_extracted": extracted,
-            "count": len(formatted_list)
+            "all_extracted": extracted,
+            "discovered_tlds": discovered_tlds,
+            "selected_tlds": discovered_tlds,
         }
 
     if st.session_state["extracted_result_data"]:
         ext_data = st.session_state["extracted_result_data"]
-        formatted_out = ext_data["formatted_out"]
-        extracted = ext_data["raw_extracted"]
+        all_ext = ext_data["all_extracted"]
+        disc_tlds = ext_data.get("discovered_tlds", [])
 
-        st.success(f"Extracted **{ext_data['count']}** unique domains!")
+        st.markdown("---")
+        # Extension filter checkboxes
+        if disc_tlds and len(disc_tlds) > 1:
+            st.markdown("#### 🔍 Filter by Extensions (Uncheck unwanted extensions):")
+            sel_tlds = st.multiselect(
+                "Keep domains with extensions:",
+                options=disc_tlds,
+                default=disc_tlds,
+                help="Uncheck any extensions you do not want in your final output"
+            )
+        else:
+            sel_tlds = disc_tlds
+
+        # Filter extracted list based on selected extensions
+        import tldextract
+        ext_helper = tldextract.TLDExtract(cache_dir="/tmp/.tld_cache")
+        if sel_tlds:
+            filtered_extracted = [d for d in all_ext if ext_helper(d).suffix.lower() in sel_tlds]
+        else:
+            filtered_extracted = all_ext
+
+        from core.extractor import format_domain_urls
+        proto_val = "none" if "none" in protocol_choice else protocol_choice.replace("://", "")
+        www_val = "add" if "add" in www_choice else "remove" if "remove" in www_choice else "keep"
+        formatted_list = format_domain_urls(filtered_extracted, protocol=proto_val, www_mode=www_val)
+        formatted_out = "\n".join(formatted_list)
+
+        st.success(f"Showing **{len(formatted_list)}** unique domains (filtered from {len(all_ext)} found)!")
 
         col_res1, col_res2 = st.columns([2, 1])
         with col_res1:
-            st.text_area("Extracted Domains Output:", value=formatted_out, height=180, key="extracted_output_box")
+            st.markdown("#### 📋 Extracted Domains Output:")
             st.code(formatted_out, language=None)
-            st.caption("💡 Use the copy icon in the top-right corner of the box above to copy all extracted domains to your clipboard in 1 click.")
+            st.caption("💡 Click the copy icon in the top-right corner of the box above to copy all domains to your clipboard.")
         with col_res2:
             st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
             st.download_button("📥 Download Extracted (.txt)", formatted_out, "extracted_domains.txt", "text/plain")
 
             if st.button("➡️ Send to Bulk Scanner", key="send_extracted_to_bulk"):
-                st.session_state["bulk_input_text"] = "\n".join(extracted)
+                st.session_state["bulk_input_text"] = "\n".join(filtered_extracted)
                 st.session_state["active_nav_tab"] = "🌐 Bulk Scanner & Multi-TLD"
                 st.session_state["nav_selection_radio"] = "🌐 Bulk Scanner & Multi-TLD"
                 st.success("✅ Loaded into Bulk Scanner! Redirecting...")
