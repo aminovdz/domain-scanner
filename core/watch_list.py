@@ -11,7 +11,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-DATA_DIR = Path("/Users/Mc/.gemini/antigravity/scratch/domain-scanner/data")
+BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = BASE_DIR / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 WATCH_FILE = DATA_DIR / "watched_domains.json"
 
