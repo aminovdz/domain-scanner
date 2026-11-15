@@ -3,6 +3,11 @@ enableCORS = false
 enableXsrfProtection = true
 maxUploadSize = 10
 enableStaticServing = true
+headless = true
+runOnSave = false
 
 [browser]
 gatherUsageStats = false
+
+[client]
+toolbarMode = "minimal"

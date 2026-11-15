@@ -20,8 +20,6 @@ import pandas as pd
 import streamlit as st
 
 import config
-import importlib
-importlib.reload(config)
 
 from core.brandable import generate_5letter_brandables, generate_cvcv_domains, generate_prefix_suffix_combos
 from core.checker import CheckResult, DomainChecker, DomainStatus, clean_domain
