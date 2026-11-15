@@ -6,13 +6,23 @@ Monetization-ready platform with AdSense, Affiliates, Hosting & Website Builder 
 import asyncio
 import html
 import io
+import os
+import sys
 import time
 from typing import Dict, List, Set
+
+# Ensure project root is prioritized first in sys.path
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
 import pandas as pd
 import streamlit as st
 
 import config
+import importlib
+importlib.reload(config)
+
 from core.brandable import generate_5letter_brandables, generate_cvcv_domains, generate_prefix_suffix_combos
 from core.checker import CheckResult, DomainChecker, DomainStatus, clean_domain
 from core.extractor import extract_domains_from_text, format_domain_urls
