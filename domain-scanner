@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Quick launcher for DomainSuite CLI or Web UI
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [ "$1" == "--ui" ] || [ "$1" == "ui" ]; then
+    # Dynamically find the first open port starting from 8501
+    PORT=8501
+    while lsof -Pi :$PORT -sTCP:LISTEN -t >/dev/null 2>&1; do
+        PORT=$((PORT+1))
+    done
+
+    echo "=========================================================="
+    echo "⚡ Launching DomainSuite Web Dashboard on port $PORT"
+    echo "👉 Open in your browser: http://localhost:$PORT"
+    echo "=========================================================="
+    python3 -m streamlit run "$DIR/app.py" --server.port $PORT
+else
+    python3 "$DIR/cli.py" "$@"
+fi

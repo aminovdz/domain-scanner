@@ -1,0 +1,13 @@
+# Popular websites (expected taken)
+google.com
+github.com
+openai.com
+stripe.com
+vercel.app
+
+# Mixed potential names
+ai-hyperflow-quantum-998.com
+cloud-synth-db-cluster-xyz8.io
+mybrandnewuniquesaastool2026.com
+nonexistenttestdomain1849128.org
+superfastcachenative99.ai

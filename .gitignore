@@ -1,0 +1,25 @@
+# Python & Environment
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.env
+.env.local
+
+# Streamlit secrets & config
+.streamlit/secrets.toml
+
+# Private server data (Watched domains, emails, subscriber lists)
+data/
+watched_domains.json
+subscribers.json
+
+# Logs & temp files
+*.log
+.DS_Store
+results.csv
+results.json
+available.txt
+extracted_domains.txt
