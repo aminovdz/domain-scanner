@@ -116,6 +116,38 @@ st.markdown(f"""
           }}
         }}
       ]
+    }},
+    {{
+      "@type": "HowTo",
+      "@id": "{config.SITE_URL}/#howto",
+      "name": "How to Check Domain Availability in Bulk",
+      "description": "Step-by-step guide to scanning multiple domain names at once using DomainSuite Pro",
+      "step": [
+        {{
+          "@type": "HowToStep",
+          "position": 1,
+          "name": "Enter domain names",
+          "text": "Type or paste your domain names one per line into the text area, or upload a .txt or .csv file."
+        }},
+        {{
+          "@type": "HowToStep",
+          "position": 2,
+          "name": "Select extensions to scan",
+          "text": "Choose which TLDs to scan: .com, .gr, .ai, .io, or select all supported extensions simultaneously."
+        }},
+        {{
+          "@type": "HowToStep",
+          "position": 3,
+          "name": "Run the bulk scan",
+          "text": "Click the Scan button. The multi-tier engine checks DNS records, RDAP endpoints, and WHOIS in parallel."
+        }},
+        {{
+          "@type": "HowToStep",
+          "position": 4,
+          "name": "Register available domains",
+          "text": "Click the registration button next to any available domain to claim it on Namecheap, Porkbun, Papaki (.gr), or GoDaddy."
+        }}
+      ]
     }}
   ]
 }}
@@ -638,7 +670,7 @@ with tabs[5]:
 
 # Semantic On-Page SEO Content & Crawlable FAQ for Search Engines
 st.markdown("---")
-with st.expander("📖 Comprehensive Guide to Bulk Domain Checking & FAQ (Click to Expand)", expanded=False):
+with st.expander("📖 Comprehensive Guide to Bulk Domain Checking & FAQ", expanded=True):
     st.markdown("""
     ### Bulk Domain Availability Checker & Greek (.GR) Registry Scanner
     Searching for untaken domain names for startups, local businesses, or brand acquisitions can be tedious when checking registrars one by one. **DomainSuite Pro** provides an ultra-fast, multi-threaded domain scanner engineered for webmasters, investors, and developers.

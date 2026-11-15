@@ -96,11 +96,11 @@ MAX_WATCH_LIST_PER_IP = int(os.environ.get("MAX_WATCH_LIST_PER_IP", "15"))
 SITE_URL = os.environ.get("SITE_URL", "https://yourdomain.com").rstrip("/")
 META_TITLE = os.environ.get(
     "META_TITLE",
-    "Bulk Domain Availability Checker & Greek .GR Scanner | DomainSuite"
+    "Free Bulk Domain Checker — .com .gr .ai .io & 50+ TLDs | DomainSuite"
 )
 META_DESCRIPTION = os.environ.get(
     "META_DESCRIPTION",
-    "Free high-speed bulk domain checker for .com, .gr, .ai, .io, and 50+ extensions. Fast multi-tier DNS & WHOIS search with instant 1-click registration links."
+    "Instantly check bulk domain availability across .com, .gr, .ai, .io & 50+ extensions. Free WHOIS lookup, DNS explorer, domain drop watcher & brandable name generator. No signup needed."
 )
 GOOGLE_SITE_VERIFICATION = os.environ.get("GOOGLE_SITE_VERIFICATION", "")
 OG_IMAGE_URL = os.environ.get("OG_IMAGE_URL", f"{SITE_URL}/og-preview.png")
