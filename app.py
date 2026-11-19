@@ -291,7 +291,15 @@ with tabs[0]:
     raw_inputs: List[str] = []
 
     with col_in1:
-        input_choice = st.radio("Input Source", ["Paste Domain Names or Keywords", "Upload File (.txt, .csv)"], horizontal=True)
+        input_choice = st.radio(
+            "Input Source",
+            [
+                "Paste Domain Names or Keywords",
+                "Extract Directly from Text / HTML / URLs (Combined Mode)",
+                "Upload File (.txt, .csv)"
+            ],
+            horizontal=True
+        )
         if input_choice == "Paste Domain Names or Keywords":
             text_val = st.text_area(
                 "Enter domain names or keyword names (one per line or comma separated):",
@@ -303,6 +311,29 @@ with tabs[0]:
                 for line in text_val.splitlines():
                     parts = [p.strip() for p in line.replace(",", " ").split() if p.strip()]
                     raw_inputs.extend(parts)
+        elif input_choice == "Extract Directly from Text / HTML / URLs (Combined Mode)":
+            c_ext1, c_ext2 = st.columns([3, 1])
+            with c_ext1:
+                raw_blob = st.text_area(
+                    "Paste messy text, articles, HTML source, logs, or URL dump:",
+                    height=150,
+                    placeholder="Check out https://mysite.com/article and ftp://files.mybrand.gr or mailto:ceo@newstartup.ai",
+                    key="bulk_combined_extractor_text",
+                )
+            with c_ext2:
+                apex_only_bulk = st.checkbox("Apex / Root domains only", value=True, help="Extracts root domains (example.com) vs preserving subdomains (sub.example.com)")
+                if st.button("🗑️ Clear Extractor Text"):
+                    st.session_state["bulk_combined_extractor_text"] = ""
+                    st.rerun()
+
+            if raw_blob.strip():
+                from core.extractor import extract_domains_from_text
+                extracted_live = extract_domains_from_text(raw_blob, apex_only=apex_only_bulk)
+                if extracted_live:
+                    st.info(f"🧹 Automatically extracted **{len(extracted_live)}** unique domains from your input text.")
+                    raw_inputs.extend(extracted_live)
+                else:
+                    st.warning("No valid domains could be extracted from the text above.")
         else:
             uploaded_f = st.file_uploader("Upload domain list file (.txt, .csv)", type=["txt", "csv"])
             if uploaded_f:
@@ -368,6 +399,11 @@ with tabs[0]:
     col_b1, col_b2, col_b3 = st.columns([1, 1, 3])
     start_bulk = col_b1.button("🚀 Start Bulk Scan", type="primary", disabled=len(final_domains_to_scan) == 0)
 
+    # Check if triggered automatically from Extractor tab
+    trigger_auto_scan = st.session_state.get("auto_trigger_bulk_scan", False)
+    if trigger_auto_scan:
+        st.session_state["auto_trigger_bulk_scan"] = False
+
     if st.session_state["scan_results"] is not None:
         if col_b2.button("🔄 Clear Results"):
             st.session_state["scan_results"] = None
@@ -383,7 +419,7 @@ with tabs[0]:
         st.caption(f"Ready to scan: **{len(final_domains_to_scan)}** domain combinations")
 
     # Run Scan
-    if start_bulk and final_domains_to_scan:
+    if (start_bulk or trigger_auto_scan) and final_domains_to_scan:
         from core.checker import CheckResult, DomainChecker, DomainStatus
         prog = st.progress(0.0)
         t_start = time.perf_counter()
@@ -645,11 +681,19 @@ with tabs[2]:
             st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
             st.download_button("📥 Download Extracted (.txt)", formatted_out, "extracted_domains.txt", "text/plain")
 
-            if st.button("➡️ Send to Bulk Scanner", key="send_extracted_to_bulk"):
+            col_sub_act1, col_sub_act2 = st.columns(2)
+            if col_sub_act1.button("➡️ Send to Scanner", key="send_extracted_to_bulk"):
                 st.session_state["bulk_input_text"] = "\n".join(filtered_extracted)
                 st.session_state["active_nav_tab"] = "🌐 Bulk Scanner & Multi-TLD"
                 st.session_state["nav_selection_radio"] = "🌐 Bulk Scanner & Multi-TLD"
                 st.success("✅ Loaded into Bulk Scanner! Redirecting...")
+                st.rerun()
+
+            if col_sub_act2.button("⚡ Scan Extracted Now", type="primary", key="scan_extracted_immediately"):
+                st.session_state["bulk_input_text"] = "\n".join(filtered_extracted)
+                st.session_state["active_nav_tab"] = "🌐 Bulk Scanner & Multi-TLD"
+                st.session_state["nav_selection_radio"] = "🌐 Bulk Scanner & Multi-TLD"
+                st.session_state["auto_trigger_bulk_scan"] = True
                 st.rerun()
 
 # ----------------- TAB 4: BRANDABLE & SHORT NAMES -----------------
